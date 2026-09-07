@@ -50,7 +50,7 @@ def test_logging(logger: tb.SummaryWriter):
 
 
         # TODO: log average val_accuracy
-        logger.add_scalar("train_acc",torch.cat(metrics["val_acc"]).mean(),epoch)
+        logger.add_scalar("val_accuracy",torch.cat(metrics["val_acc"]).mean(),epoch)
 
 
 if __name__ == "__main__":
