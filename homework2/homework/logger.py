@@ -21,29 +21,36 @@ def test_logging(logger: tb.SummaryWriter):
     # strongly simplified training loop
     global_step = 0
     for epoch in range(10):
-        metrics = {"train_acc": [], "val_acc": []}
+        metrics = {"train_acc": [], "val_acc": []} #This is a dictionary, which is different from a list of list in the sense that it has name "train_acc", and we call them by their names like matrix["train_acc"]
 
         # example training loop
-        torch.manual_seed(epoch)
+        torch.manual_seed(epoch) #This sets the seed for random numbers of PyTorch, so we can rule out the influence of random variables in our experiments
         for iteration in range(20):
             dummy_train_loss = 0.9 ** (epoch + iteration / 20.0)
             dummy_train_accuracy = epoch / 10.0 + torch.randn(10)
 
             # TODO: log train_loss
+            logger.add_scalar("train_loss",dummy_train_loss,global_step)
             # TODO: save additional metrics to be averaged
+            metrics["train_acc"].append(dummy_train_accuracy) # Noticing that here actually we add the tensor of dimension 1, and the size of that single dimension is 10, not addding 10 elements into it
 
             global_step += 1
 
         # TODO: log average train_accuracy
+        logger.add_scalar("train_accuracy", torch.cat(metrics["train_acc"]).mean(),global_step)
+        
 
         # example validation loop
         torch.manual_seed(epoch)
         for _ in range(10):
             dummy_validation_accuracy = epoch / 10.0 + torch.randn(10)
 
-            # TODO: save additional metrics to be averaged
+            # TODO: save additional metrics to be average
+            metrics["val_acc"].append(dummy_validation_accuracy)
+
 
         # TODO: log average val_accuracy
+        logger.add_scalar("train_acc",torch.cat(metrics["val_acc"]).mean(),epoch)
 
 
 if __name__ == "__main__":
