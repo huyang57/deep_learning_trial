@@ -18,8 +18,8 @@ class SuperTuxDataset(Dataset):
         to_tensor = transforms.ToTensor()
 
         self.data = []
-
-        with open(Path(dataset_path, "labels.csv"), newline="") as f:
+        # with in Python is to open and automatically close after you have done something, it supports for objects with enter and exit functions
+        with open(Path(dataset_path, "labels.csv"), newline="") as f: #Here Path is a Python function specifying the loocation of the folder where we can find the file "label.csv"
             for fname, label, _ in csv.reader(f):
                 if label in LABEL_NAMES:
                     image = Image.open(Path(dataset_path, fname))
@@ -37,7 +37,7 @@ class SuperTuxDataset(Dataset):
 def load_data(dataset_path: str, num_workers: int = 0, batch_size: int = 128, shuffle: bool = False) -> DataLoader:
     dataset = SuperTuxDataset(dataset_path)
 
-    return DataLoader(dataset, num_workers=num_workers, batch_size=batch_size, shuffle=shuffle, drop_last=True)
+    return DataLoader(dataset, num_workers=num_workers, batch_size=batch_size, shuffle=shuffle, drop_last=True) # Here we can use the Dataloader since the class SuperTuxDataset actually inherits from the 'Dataset' which is compatible with DataLoader
 
 
 def compute_accuracy(outputs: torch.Tensor, labels: torch.Tensor):
