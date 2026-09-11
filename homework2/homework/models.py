@@ -77,7 +77,7 @@ class MLPClassifier(nn.Module):
         super().__init__()
         self.layer_1=nn.Linear(3*h*w,hidden_layer)
         self.relu=nn.ReLU()
-        self.layer_2=nn.Lienar(hidden_layer,number_classes)
+        self.layer_2=nn.Linear(hidden_layer,num_classes)
         self.composelayer=nn.Sequential(self.layer_1,self.relu,self.layer_2) # As part of the architecture of the model, we should put it here insteaf in the forward
 
         
@@ -116,10 +116,11 @@ class MLPClassifierDeep(nn.Module):
         """
         super().__init__()
         layers=[]
-        layers.append(nn.Linear(3*h*w,hidden_layer)
+        layers.append(nn.Linear(3*h*w,hidden_layer))
         for _ in range(num_layer):
                              layers.append(nn.Linear(hidden_layer,hidden_layer))
-        layers.append(nn.Linear(hidden_layer,number_classes)
+                             layers.append(nn.ReLU())
+        layers.append(nn.Linear(hidden_layer,number_classes))
         self.finallayer=nn.Sequential(*layers)
 
         
@@ -141,7 +142,7 @@ class MLPClassifierDeepResidual(nn.Module):
         w: int = 64,
         num_classes: int = 6,
         hidden_layer=128,
-        layer_num=4
+        num_layer=4
     ):
         """
         Args:
@@ -155,7 +156,7 @@ class MLPClassifierDeepResidual(nn.Module):
         """
         super().__init__()
         self.layer_input=nn.Linear(3*h*w,hidden_layer)
-        self.layers=nn.ModuleList([nn.Linear(hidden_layer,hidden_layer) for _ in range(layer_num)])
+        self.layers=nn.ModuleList([nn.Linear(hidden_layer,hidden_layer) for _ in range(num_layer)])
         self.relu=nn.ReLU()
         self.layer_output=nn.Linear(hidden_layer,num_classes)
         
@@ -175,6 +176,7 @@ class MLPClassifierDeepResidual(nn.Module):
             residual=x
             x=self.relu(layer(x)+residual)  # you should apply residual connecttion at this layer insted the          input since at first the sizes mismatch. 
         x=self.layer_output(x) # Caution: don't apply ReLu in the final logits output
+        return x
 
 model_factory = {
     "linear": LinearClassifier,
