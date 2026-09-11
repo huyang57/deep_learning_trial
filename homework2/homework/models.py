@@ -43,6 +43,8 @@ class LinearClassifier(nn.Module):
             num_classes: int, number of classes
         """
         super().__init__()
+        self.layer=nn.Linear(3*h*w,num_classes)
+        
 
         
 
@@ -54,8 +56,7 @@ class LinearClassifier(nn.Module):
         Returns:
             tensor (b, num_classes) logits
         """
-        raise NotImplementedError("LinearClassifier.forward() is not implemented")
-
+        return self.layer(x.flatten(1)) #Flattening from dim=1, preserve diim=0
 
 class MLPClassifier(nn.Module):
     def __init__(
@@ -63,6 +64,7 @@ class MLPClassifier(nn.Module):
         h: int = 64,
         w: int = 64,
         num_classes: int = 6,
+        hidden_layer=128
     ):
         """
         An MLP with a single hidden layer
@@ -73,8 +75,12 @@ class MLPClassifier(nn.Module):
             num_classes: int, number of classes
         """
         super().__init__()
+        self.layer_1=nn.Linear(3*h*w,hidden_layer)
+        self.relu=nn.ReLU()
+        self.layer_2=nn.Lienar(hidden_layer,number_classes)
+        self.composelayer=nn.Sequential(self.layer_1,self.relu,self.layer_2) # As part of the architecture of the model, we should put it here insteaf in the forward
 
-        raise NotImplementedError("MLPClassifier.__init__() is not implemented")
+        
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -84,7 +90,7 @@ class MLPClassifier(nn.Module):
         Returns:
             tensor (b, num_classes) logits
         """
-        raise NotImplementedError("MLPClassifier.forward() is not implemented")
+        return self.composelayer(x.flatten(1))
 
 
 class MLPClassifierDeep(nn.Module):
@@ -93,6 +99,8 @@ class MLPClassifierDeep(nn.Module):
         h: int = 64,
         w: int = 64,
         num_classes: int = 6,
+        hidden_layer=128,
+        num_layer=4
     ):
         """
         An MLP with multiple hidden layers
@@ -107,9 +115,14 @@ class MLPClassifierDeep(nn.Module):
             num_layers: int, number of hidden layers
         """
         super().__init__()
+        layers=[]
+        layers.append(nn.Linear(3*h*w,hidden_layer)
+        for _ in range(num_layer):
+                             layers.append(nn.Linear(hidden_layer,hidden_layer))
+        layers.append(nn.Linear(hidden_layer,number_classes)
+        self.finallayer=nn.Sequential(*layers)
 
-        raise NotImplementedError("MLPClassifierDeep.__init__() is not implemented")
-
+        
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         Args:
@@ -118,7 +131,7 @@ class MLPClassifierDeep(nn.Module):
         Returns:
             tensor (b, num_classes) logits
         """
-        raise NotImplementedError("MLPClassifierDeep.forward() is not implemented")
+        return self.finallayer(x.flatten(1))
 
 
 class MLPClassifierDeepResidual(nn.Module):
@@ -127,6 +140,8 @@ class MLPClassifierDeepResidual(nn.Module):
         h: int = 64,
         w: int = 64,
         num_classes: int = 6,
+        hidden_layer=128,
+        layer_num=4
     ):
         """
         Args:
@@ -139,9 +154,13 @@ class MLPClassifierDeepResidual(nn.Module):
             num_layers: int, number of hidden layers
         """
         super().__init__()
+        self.layer_input=nn.Linear(3*h*w,hidden_layer)
+        self.layers=nn.ModuleList([nn.Linear(hidden_layer,hidden_layer) for _ in range(layer_num)])
+        self.relu=nn.ReLU()
+        self.layer_output=nn.Linear(hidden_layer,num_classes)
+        
 
-        raise NotImplementedError("MLPClassifierDeepResidual.__init__() is not implemented")
-
+        
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         Args:
@@ -150,8 +169,12 @@ class MLPClassifierDeepResidual(nn.Module):
         Returns:
             tensor (b, num_classes) logits
         """
-        raise NotImplementedError("MLPClassifierDeepResidual.forward() is not implemented")
-
+        x=x.flatten(1)
+        x=self.relu(self.layer_input(x))
+        for layer in self.layers:
+            residual=x
+            x=self.relu(layer(x)+residual)  # you should apply residual connecttion at this layer insted the          input since at first the sizes mismatch. 
+        x=self.layer_output(x) # Caution: don't apply ReLu in the final logits output
 
 model_factory = {
     "linear": LinearClassifier,
