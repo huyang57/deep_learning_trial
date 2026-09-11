@@ -120,7 +120,7 @@ class MLPClassifierDeep(nn.Module):
         for _ in range(num_layer):
                              layers.append(nn.Linear(hidden_layer,hidden_layer))
                              layers.append(nn.ReLU())
-        layers.append(nn.Linear(hidden_layer,number_classes))
+        layers.append(nn.Linear(hidden_layer,num_classes))
         self.finallayer=nn.Sequential(*layers)
 
         
