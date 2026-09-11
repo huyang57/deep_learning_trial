@@ -86,7 +86,7 @@ def train(
                 # TODO: compute validation accuracy
                 pred_v=(model(img)).argmax(dim=1)
                 acc_v=(pred_v==label).float().mean()
-                matrics["val_acc"].append(acc_v.item())
+                metrics["val_acc"].append(acc_v.item())
 
         # log average train and val accuracy to tensorboard
         epoch_train_acc = torch.as_tensor(metrics["train_acc"]).mean()
