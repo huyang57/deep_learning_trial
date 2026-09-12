@@ -24,10 +24,18 @@ class Classifier(nn.Module):
         super().__init__()
 
         self.register_buffer("input_mean", torch.as_tensor(INPUT_MEAN))
-        self.register_buffer("input_std", torch.as_tensor(INPUT_STD))
+        self.register_buffer("input_std", torch.as_tensor(INPUT_STD)) #Fix the model center
 
         # TODO: implement
-        pass
+        self.conv=nn.Sequential(nn.Conv2d(in_channels,32,kernel_size=3,padding=1),nn.ReLU(),
+                                nn.MaxPool2d(kernel_size=2,stride=2),
+
+                                nn.Conv2d(32,64,kernel_size=3,padding=1),nn.ReLU(),nn.MaxPool2d(kernel_size=2,stride=2),
+
+                                nn.Conv2d(64,128,kernel_size=3,padding=1),nn.ReLU(),nn.MaxPool2d(kernel_size=2,stride=2))
+        self.pool=nn.AdaptiveAvgPool2d((1,1))
+        self.flatten=nn.Flatten(start_dim=1)
+        self.classifier=nn.Linear(128,num_classes)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -38,12 +46,14 @@ class Classifier(nn.Module):
             tensor (b, num_classes) logits
         """
         # optional: normalizes the input
-        z = (x - self.input_mean[None, :, None, None]) / self.input_std[None, :, None, None]
+        x = (x - self.input_mean[None, :, None, None]) / self.input_std[None, :, None, None]
 
         # TODO: replace with actual forward pass
-        logits = torch.randn(x.size(0), 6)
-
-        return logits
+        x=self.conv(x)
+        x=self.pool(x)
+        x=self.flatten(x) # This matters since we need to change shape (128,1,1) to (128) and then we can apply nn.Linear
+        x=self.classifier(x)
+        return x
 
     def predict(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -79,8 +89,16 @@ class Detector(torch.nn.Module):
         self.register_buffer("input_std", torch.as_tensor(INPUT_STD))
 
         # TODO: implement
-        pass
-
+        self.down_1=nn.Sequential(nn.Conv2d(in_channels,16,kernel_size=3,stride=2,padding=1,),
+                                  nn.ReLU())
+        self.down_2=nn.Sequential(nn.Conv2d(16,32,kernel_size=3,stride=2,padding=1), 
+                                  nn.ReLU())
+        self.relu=ReLU()
+        self.up_1=nn.Sequential(nn.ConvTranspose2d(32,16,kernel_size=3,stride=2,padding=1,output_padding=1),
+                                nn.ConvTranspose2d(16,16,kernel_size=3,stride=2,padding=1,output_padding=1)
+        
+        self.segmentation_head=nn.Conv2d(16,num_classes,kernel_size=1)
+        self.depth_head=nn.Conv2d(16,1,kernel_size=1) # kernel_size=1 means it combines the features at each pixel location, while preserving height and width.
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Used in training, takes an image and returns raw logits and raw depth.
@@ -98,8 +116,31 @@ class Detector(torch.nn.Module):
         z = (x - self.input_mean[None, :, None, None]) / self.input_std[None, :, None, None]
 
         # TODO: replace with actual forward pass
-        logits = torch.randn(x.size(0), 3, x.size(2), x.size(3))
-        raw_depth = torch.rand(x.size(0), x.size(2), x.size(3))
+            d1 = self.down1(z)
+    d2 = self.down2(d1)
+
+    # Decoder
+    u1 = self.relu(
+        self.up1(d2, output_size=d1.size())
+    )
+
+    target_size = (
+        x.size(0),
+        16,
+        x.size(2),
+        x.size(3),
+    )
+
+    u2 = self.relu(
+        self.up2(u1, output_size=target_size)
+    )
+
+    # Prediction heads
+    logits = self.segmentation_head(u2)
+
+    raw_depth = self.depth_head(u2).squeeze(1)
+
+    return logits, raw_depth
 
         return logits, raw_depth
 
